@@ -8,6 +8,8 @@ import csv
 import math
 import time
 import pickle
+from itertools import product
+
 import scipy.integrate as integrate
 import scipy.stats as stats
 
@@ -178,6 +180,8 @@ def main(args, func_map):
     death_probs = read_csv(args.death_prob_file)
     discharge_probs = read_csv(args.discharge_prob_file)
 
+    assert args.num_patient % args.num_hcw == 0
+
     # Initialize patients 
     patient_list = bulk_initialization(args)
 
@@ -190,42 +194,51 @@ def main(args, func_map):
         hcw_list[name] = HealthCareWorker()
 
     # Simulation event
-    for day in range(num_day):
+    for _ in range(num_day):
 
-        for shift in range(24):
+        for _ in range(24):
+
             # The keys of schedule are h0, h1, h2, h3, each has length 4. 
             schedule = random_schedule(current_p_names, num_hcw)
             visit_idx = 0 
-
+            
             # Each shift of a HCW should take care of 4 patients.
             # Then 4 loops needed. The index of hcw is hard coded for convinience this time. 
-            for _ in range(4):
+            for _ in range(args.num_patient // args.num_hcw):
+
+                for hcw_idx in range(args.num_hcw):
+
+                    hcw_id = f"h{hcw_idx}"
+                    h_pt_idx = schedule[hcw_id][visit_idx]
+                    h_patient = patient_list[h_pt_idx]
+
+                    hcw_list[hcw_id], patient_list[h_pt_idx] = ph_interaction(h_patient, hcw_list[hcw_id], args, current_day, current_hour, reference_results, func_map)
 
                 # HCW interaction
-                # There are four tables referring to four tables 
-                # Two are responsible for colonized, 
-                # Two are responsible for infected. 
-                h0_pt_idx = schedule['h0'][visit_idx]
-                h1_pt_idx = schedule['h1'][visit_idx]
-                h2_pt_idx = schedule['h2'][visit_idx]
-                h3_pt_idx = schedule['h3'][visit_idx]
+                # There are four tables in the doc desgin 
+                # Two are for colonized, 
+                # Two are for infected. 
+                # h0_pt_idx = schedule['h0'][visit_idx]
+                # h1_pt_idx = schedule['h1'][visit_idx]
+                # h2_pt_idx = schedule['h2'][visit_idx]
+                # h3_pt_idx = schedule['h3'][visit_idx]
 
-                h0_patient = patient_list[h0_pt_idx]
-                h1_patient = patient_list[h1_pt_idx]
-                h2_patient = patient_list[h2_pt_idx]
-                h3_patient = patient_list[h3_pt_idx]
+                # h0_patient = patient_list[h0_pt_idx]
+                # h1_patient = patient_list[h1_pt_idx]
+                # h2_patient = patient_list[h2_pt_idx]
+                # h3_patient = patient_list[h3_pt_idx]
 
-                # the patient of h0 
-                hcw_list['h0'], patient_list[h0_pt_idx] = ph_interaction(h0_patient, hcw_list['h0'], args, current_day, current_hour, reference_results, func_map)
+                # # the patient of h0 
+                # hcw_list['h0'], patient_list[h0_pt_idx] = ph_interaction(h0_patient, hcw_list['h0'], args, current_day, current_hour, reference_results, func_map)
 
-                # the patient of h1
-                hcw_list['h1'], patient_list[h1_pt_idx] = ph_interaction(h1_patient, hcw_list['h1'], args, current_day, current_hour, reference_results, func_map)
+                # # the patient of h1
+                # hcw_list['h1'], patient_list[h1_pt_idx] = ph_interaction(h1_patient, hcw_list['h1'], args, current_day, current_hour, reference_results, func_map)
 
-                # the patient of h2
-                hcw_list['h2'], patient_list[h2_pt_idx] = ph_interaction(h2_patient, hcw_list['h2'], args, current_day, current_hour, reference_results, func_map)
+                # # the patient of h2
+                # hcw_list['h2'], patient_list[h2_pt_idx] = ph_interaction(h2_patient, hcw_list['h2'], args, current_day, current_hour, reference_results, func_map)
 
-                # the patient of h3
-                hcw_list['h3'], patient_list[h3_pt_idx] = ph_interaction(h3_patient, hcw_list['h3'], args, current_day, current_hour, reference_results, func_map)
+                # # the patient of h3
+                # hcw_list['h3'], patient_list[h3_pt_idx] = ph_interaction(h3_patient, hcw_list['h3'], args, current_day, current_hour, reference_results, func_map)
 
                 # Update the results and record 
                 visit_idx += 1 
@@ -316,10 +329,10 @@ if __name__ == "__main__":
     parser.add_argument('--m', default=0.6,
                         help='the parameter to initialize a patient')
 
-    parser.add_argument('--r1', default=0.5,
+    parser.add_argument('--r1', default=0.35,
                         help='the parameter to initialize a patient')    
 
-    parser.add_argument('--r2', default=0.4,
+    parser.add_argument('--r2', default=0.23,
                         help='the parameter to initialize a patient')
 
     parser.add_argument('--p', default=0.1,
@@ -334,25 +347,25 @@ if __name__ == "__main__":
     parser.add_argument('--s', default=0.015,
                         help='the probability of super-infection')
 
-    parser.add_argument('--sigmax', default=0.45,
+    parser.add_argument('--sigmax', default=0.16,
                         help='the probability for infection development of strain X')
 
-    parser.add_argument('--sigmac', default=0.203,
+    parser.add_argument('--sigmac', default=0.45,
                         help='the probability for infection development of ARB strains')
 
-    parser.add_argument('--epsilon', default=0.01,
+    parser.add_argument('--epsilon', default=0.03,
                         help='the probability of mutation')
 
     parser.add_argument('--eta', default=0.5,
                         help='the probability of HCW to clean up the strains after every contact')
 
-    parser.add_argument('--discharge_prob_file', default='../../dischargeprob.csv',
+    parser.add_argument('--discharge_prob_file', default='../dischargeprob.csv',
                         help='the file that contains the Probability of discharge for colonized patients each day')
 
     parser.add_argument('--kappa_mu', default=0.74,
                         help='hazard ratio of discharge for infected patients')
 
-    parser.add_argument('--death_prob_file', default='../../deathprob.csv',
+    parser.add_argument('--death_prob_file', default='../deathprob.csv',
                         help='the probability of death for colonized patients')
 
     parser.add_argument('--kappa_nu', default=1.04,
@@ -382,7 +395,13 @@ if __name__ == "__main__":
     p_q_list = [(0.1, 0.05), (0.1, 0.1), (0.1, 0.15), (0.1, 0.25), (0.1, 0.3), (0.15, 0.05), (0.2, 0.05), (0.25, 0.05), (0.3, 0.05)]
     # p_q_list = [(0.3, 0.05)]
 
-    for p, q in p_q_list:
+    p_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+    q_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+
+    # p_list = [0.05]
+    # q_list = [0.05]
+
+    for p, q in list(product(p_list, q_list)):
 
         args.q = q
         args.p = p 

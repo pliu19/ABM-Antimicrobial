@@ -28,20 +28,24 @@ def draw():
 
 def bulk_initialization(args):
     '''
-    Initialize all the patients at the very beginning.
+    Initialize all the patients at the very beginning. 
+    The assignments should be dynamic based on the num patients
     '''
     patient_list = {}
 
     current_day = 0
 
     viruses = ['xa', 'xn', '0', '1', '2', '12']
-    num_pts = [6, 6, 1, 1, 1, 1]
+    ratio_pts = [6/16, 6/16, 1/16, 1/16, 1/16, 1/16]
 
-    idx = 0
-    for virus, num in zip(viruses, num_pts):
-        for i in range(num):
-            patient_list[idx] = Patient(args, idx, current_day, virus)
-            idx += 1
+    patient_list[0] = Patient(args, 0, current_day, "0")
+    patient_list[1] = Patient(args, 1, current_day, "1")
+    patient_list[2] = Patient(args, 2, current_day, "2")
+    patient_list[3] = Patient(args, 3, current_day, "12")
+
+    for idx in range(4, args.num_patient):
+        x = np.random.choice(viruses, p=ratio_pts)
+        patient_list[idx] = Patient(args, idx, current_day, x)
 
     return patient_list
 
@@ -75,7 +79,7 @@ def initial_patient(args, name, current_day):
 
 def random_schedule(current_patients, num_hcw=4):
     '''
-    Schedule the HCWs' routine every 8 hours  
+    Schedule the HCWs' routine every 24 hours  
     '''
     rst = {}
 
