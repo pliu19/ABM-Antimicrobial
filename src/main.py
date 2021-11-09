@@ -308,10 +308,10 @@ if __name__ == "__main__":
     parser.add_argument('--time_interval', default=2,
                         help='the interval time that a HCW visit for a patient')
 
-    parser.add_argument('--num_patient', default=16,
+    parser.add_argument('--num_patient', type=int, default=16,
                         help='the number of patients, this is fixed for now. Do not change!')
 
-    parser.add_argument('--num_hcw', default=4,
+    parser.add_argument('--num_hcw', type=int, default=4,
                         help='the number of patients, this is fixed for now. Do not change!')
 
     parser.add_argument('--num_strain', default=6,
