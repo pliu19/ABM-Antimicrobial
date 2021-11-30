@@ -653,8 +653,8 @@ def hcw_cleanUp(healthW, currentTime, eta=0.5):
     ToDo: Set eta to clean up all the strains from HCW 
     '''
     rand_num = draw()
-    if currentTime%8 == 0:
-
+    
+    if (currentTime+1) % 8 == 0:
         healthW.strain_set.clear()
         return healthW
     

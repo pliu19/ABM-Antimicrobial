@@ -1,10 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import os
-import sys
+import copy
 import argparse
 
-import csv
 import math
 import time
 import pickle
@@ -195,17 +194,16 @@ def main(args, func_map):
 
     # Simulation event
     for _ in range(num_day):
-
-        for _ in range(24):
-
-            # The keys of schedule are h0, h1, h2, h3, each has length 4. 
+        
+        # Every 8 hour is a shift
+        for shift in range(3):
+            # The keys of schedule are h0, h1, h2, h3...
             schedule = random_schedule(current_p_names, num_hcw)
             visit_idx = 0 
             
-            # Each shift of a HCW should take care of 4 patients.
-            # Then 4 loops needed. The index of hcw is hard coded for convinience this time. 
-            for _ in range(args.num_patient // args.num_hcw):
-
+            # For example, 16 patients and 4 hcws. 
+            for _ in range(args.num_patient // args.num_hcw):  
+                # Should operate at the same time
                 for hcw_idx in range(args.num_hcw):
 
                     hcw_id = f"h{hcw_idx}"
@@ -214,38 +212,11 @@ def main(args, func_map):
 
                     hcw_list[hcw_id], patient_list[h_pt_idx] = ph_interaction(h_patient, hcw_list[hcw_id], args, current_day, current_hour, reference_results, func_map)
 
-                # HCW interaction
-                # There are four tables in the doc desgin 
-                # Two are for colonized, 
-                # Two are for infected. 
-                # h0_pt_idx = schedule['h0'][visit_idx]
-                # h1_pt_idx = schedule['h1'][visit_idx]
-                # h2_pt_idx = schedule['h2'][visit_idx]
-                # h3_pt_idx = schedule['h3'][visit_idx]
-
-                # h0_patient = patient_list[h0_pt_idx]
-                # h1_patient = patient_list[h1_pt_idx]
-                # h2_patient = patient_list[h2_pt_idx]
-                # h3_patient = patient_list[h3_pt_idx]
-
-                # # the patient of h0 
-                # hcw_list['h0'], patient_list[h0_pt_idx] = ph_interaction(h0_patient, hcw_list['h0'], args, current_day, current_hour, reference_results, func_map)
-
-                # # the patient of h1
-                # hcw_list['h1'], patient_list[h1_pt_idx] = ph_interaction(h1_patient, hcw_list['h1'], args, current_day, current_hour, reference_results, func_map)
-
-                # # the patient of h2
-                # hcw_list['h2'], patient_list[h2_pt_idx] = ph_interaction(h2_patient, hcw_list['h2'], args, current_day, current_hour, reference_results, func_map)
-
-                # # the patient of h3
-                # hcw_list['h3'], patient_list[h3_pt_idx] = ph_interaction(h3_patient, hcw_list['h3'], args, current_day, current_hour, reference_results, func_map)
-
                 # Update the results and record 
                 visit_idx += 1 
-
-            # Increase the time interval by 1
-            current_hour += 1
-
+                # Increase the time interval by time_interval (e.g., 2)
+                current_hour += args.time_interval
+        
             # 6. HCW clean up the virus
             for key, value in hcw_list.items():
                 hcw_list[key] = hcw_cleanUp(value, current_hour, args.eta)
@@ -302,7 +273,7 @@ if __name__ == "__main__":
     parser.add_argument('--version', default='v1',
                         help='the version of simulation')
 
-    parser.add_argument('--days', default=1460,
+    parser.add_argument('--days', type=int, default=1460,
                         help='the days of simulation')
 
     parser.add_argument('--time_interval', default=2,
@@ -391,37 +362,20 @@ if __name__ == "__main__":
     else:
         raise ("No such option")
 
-    
-    p_q_list = [(0.1, 0.05), (0.1, 0.1), (0.1, 0.15), (0.1, 0.25), (0.1, 0.3), (0.15, 0.05), (0.2, 0.05), (0.25, 0.05), (0.3, 0.05)]
-    # p_q_list = [(0.3, 0.05)]
+    original_args = copy.deepcopy(args)
+
+    p_q_list = [(0.1, 0.1), (0.05, 0.3), (0.3, 0.05), (0.05, 0.05)]
 
     p_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
     q_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
 
-    # p_list = [0.05]
-    # q_list = [0.05]
-
     for p, q in list(product(p_list, q_list)):
+
+    # for p, q in p_q_list:
 
         args.q = q
         args.p = p 
         args.r = p 
-
-        if args.std > 0.:
-            args.a = truncnorm_func(args.a, args.std)
-            args.m = truncnorm_func(args.m, args.std)
-            args.r1 = truncnorm_func(args.r1, args.std)
-            args.r2 = truncnorm_func(args.r2, args.std)
-            args.p = truncnorm_func(args.p, args.std)
-            args.q = truncnorm_func(args.q, args.std)
-            args.r = truncnorm_func(args.r, args.std)
-            args.s = truncnorm_func(args.s, args.std)
-            args.epsilon = truncnorm_func(args.epsilon, args.std)
-            args.sigmax = truncnorm_func(args.sigmax, args.std)
-            args.sigmac = truncnorm_func(args.sigmac, args.std)
-            args.eta = truncnorm_func(args.eta, args.std)
-            args.kappa_mu = truncnorm_func(args.kappa_mu, args.std)
-            args.kappa_nu = truncnorm_func(args.kappa_nu, args.std)
 
         whole_res = {}
         file_path = './log/' + args.version + '_q=' + str(args.q)+ '_p&r=' + str(args.p) + '/'
@@ -431,6 +385,22 @@ if __name__ == "__main__":
 
         for i in range(args.num_runs):
             
+            if args.std > 0.:
+                args.a = truncnorm_func(original_args.a, args.std)
+                args.m = truncnorm_func(original_args.m, args.std)
+                args.r1 = truncnorm_func(original_args.r1, args.std)
+                args.r2 = truncnorm_func(original_args.r2, args.std)
+                args.p = truncnorm_func(original_args.p, args.std)
+                args.q = truncnorm_func(original_args.q, args.std)
+                args.r = truncnorm_func(original_args.r, args.std)
+                args.s = truncnorm_func(original_args.s, args.std)
+                args.epsilon = truncnorm_func(original_args.epsilon, args.std)
+                args.sigmax = truncnorm_func(original_args.sigmax, args.std)
+                args.sigmac = truncnorm_func(original_args.sigmac, args.std)
+                args.eta = truncnorm_func(original_args.eta, args.std)
+                args.kappa_mu = truncnorm_func(original_args.kappa_mu, args.std)
+                args.kappa_nu = truncnorm_func(original_args.kappa_nu, args.std)
+
             res = main(args, func_map)
             whole_res[i] = res
 
