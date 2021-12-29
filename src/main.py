@@ -24,11 +24,13 @@ from scheme_func import discharge_admission, death_event, intrinsic_mutation_v1
 from scheme_func import drug_change_v2, intrinsic_mutation_v2
 
 
-def truncnorm_func(mean, std=0.01):
+def truncnorm_func(mean, std_rate=0.1):
 
     min_epsilon = 10e-5
 
-    bounded_length = mean * 0.1
+    bounded_length = mean * std_rate
+
+    std = mean * std_rate
 
     lower, upper = mean-bounded_length, mean+bounded_length
 
@@ -257,8 +259,7 @@ def main(args, func_map):
 
             # Check for patient's super infection
             if patient.super_infe:
-            	final_results['superinfection'][current_day] += 1
-
+                final_results['superinfection'][current_day] += 1
 
         current_day += 1
 
@@ -291,7 +292,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_drug', default=4,
                         help='the number of drugs (A, B, C, L)')
 
-    parser.add_argument('--std', default=0.0,
+    parser.add_argument('--std', type=float, default=0.0,
                         help='the standard deviation of all the parameters. If 0, then the parameter is deterministic')
 
     parser.add_argument('--a', default=0.1,
@@ -361,24 +362,30 @@ if __name__ == "__main__":
         func_map['intrinsic_mutation'] = intrinsic_mutation_v2    
     else:
         raise ("No such option")
+    
+    base_dir = './log/' + args.version + '_p' + str(args.num_patient) + '_h' + str(args.num_hcw) + '/'
+    
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir)
 
-    original_args = copy.deepcopy(args)
+    
 
-    p_q_list = [(0.1, 0.1), (0.05, 0.3), (0.3, 0.05), (0.05, 0.05)]
+    p_q_list = [(0.3, 0.3), (0.2, 0.5), (0.5, 0.2), (0.15, 0.15), (0.05, 0.5), (0.5, 0.05)]
 
-    p_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
-    q_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+    p_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+    q_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
 
-    for p, q in list(product(p_list, q_list)):
-
-    # for p, q in p_q_list:
+    # for p, q in list(product(p_list, q_list)):
+    for p, q in p_q_list:
 
         args.q = q
         args.p = p 
         args.r = p 
 
+        original_args = copy.deepcopy(args)
+
         whole_res = {}
-        file_path = './log/' + args.version + '_q=' + str(args.q)+ '_p&r=' + str(args.p) + '/'
+        file_path = base_dir + args.version + '_q=' + str(args.q)+ '_p&r=' + str(args.p) + '/'
 
         if not os.path.exists(file_path):
             os.makedirs(file_path)
@@ -390,9 +397,9 @@ if __name__ == "__main__":
                 args.m = truncnorm_func(original_args.m, args.std)
                 args.r1 = truncnorm_func(original_args.r1, args.std)
                 args.r2 = truncnorm_func(original_args.r2, args.std)
-                args.p = truncnorm_func(original_args.p, args.std)
-                args.q = truncnorm_func(original_args.q, args.std)
-                args.r = truncnorm_func(original_args.r, args.std)
+                # args.p = truncnorm_func(original_args.p, args.std)
+                # args.q = truncnorm_func(original_args.q, args.std)
+                # args.r = truncnorm_func(original_args.r, args.std)
                 args.s = truncnorm_func(original_args.s, args.std)
                 args.epsilon = truncnorm_func(original_args.epsilon, args.std)
                 args.sigmax = truncnorm_func(original_args.sigmax, args.std)
