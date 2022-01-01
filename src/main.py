@@ -368,8 +368,6 @@ if __name__ == "__main__":
     if not os.path.exists(base_dir):
         os.makedirs(base_dir)
 
-    
-
     p_q_list = [(0.3, 0.3), (0.2, 0.5), (0.5, 0.2), (0.15, 0.15), (0.05, 0.5), (0.5, 0.05)]
 
     p_list = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
@@ -382,7 +380,7 @@ if __name__ == "__main__":
         args.p = p 
         args.r = p 
 
-        original_args = copy.deepcopy(args)
+        copy_args = copy.deepcopy(args)
 
         whole_res = {}
         file_path = base_dir + args.version + '_q=' + str(args.q)+ '_p&r=' + str(args.p) + '/'
@@ -393,25 +391,23 @@ if __name__ == "__main__":
         for i in range(args.num_runs):
             
             if args.std > 0.:
-                args.a = truncnorm_func(original_args.a, args.std)
-                args.m = truncnorm_func(original_args.m, args.std)
-                args.r1 = truncnorm_func(original_args.r1, args.std)
-                args.r2 = truncnorm_func(original_args.r2, args.std)
-                # args.p = truncnorm_func(original_args.p, args.std)
-                # args.q = truncnorm_func(original_args.q, args.std)
-                # args.r = truncnorm_func(original_args.r, args.std)
-                args.s = truncnorm_func(original_args.s, args.std)
-                args.epsilon = truncnorm_func(original_args.epsilon, args.std)
-                args.sigmax = truncnorm_func(original_args.sigmax, args.std)
-                args.sigmac = truncnorm_func(original_args.sigmac, args.std)
-                args.eta = truncnorm_func(original_args.eta, args.std)
-                args.kappa_mu = truncnorm_func(original_args.kappa_mu, args.std)
-                args.kappa_nu = truncnorm_func(original_args.kappa_nu, args.std)
+                copy_args.a = truncnorm_func(args.a, args.std)
+                copy_args.m = truncnorm_func(args.m, args.std)
+                copy_args.r1 = truncnorm_func(args.r1, args.std)
+                copy_args.r2 = truncnorm_func(args.r2, args.std)
 
-            res = main(args, func_map)
+                copy_args.s = truncnorm_func(args.s, args.std)
+                copy_args.epsilon = truncnorm_func(args.epsilon, args.std)
+                copy_args.sigmax = truncnorm_func(args.sigmax, args.std)
+                copy_args.sigmac = truncnorm_func(args.sigmac, args.std)
+                copy_args.eta = truncnorm_func(args.eta, args.std)
+                copy_args.kappa_mu = truncnorm_func(args.kappa_mu, args.std)
+                copy_args.kappa_nu = truncnorm_func(args.kappa_nu, args.std)
+
+            res = main(copy_args, func_map)
             whole_res[i] = res
 
-            if i % 10 == 0:
+            if i % 50 == 0:
                 print(p, q, i)
 
         recordEverything(whole_res, args.version, file_path)
